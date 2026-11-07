@@ -69,10 +69,10 @@
 
 Ветка: `stage-1-project-skeleton`
 
-- [ ] Создать проект через Spring Initializr.
-- [ ] Настроить `.gitignore`.
-- [ ] Добавить проверочный эндпоинт `/health`.
-- [ ] Настроить запуск тестов в GitHub Actions.
+- [x] Создать проект через Spring Initializr.
+- [x] Настроить `.gitignore`.
+- [x] Добавить проверочный эндпоинт `/health`.
+- [x] Настроить запуск тестов в GitHub Actions.
 
 Готово, когда: приложение запускается, `/health` отвечает, а тесты проходят в GitHub Actions.
 
