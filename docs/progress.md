@@ -5,7 +5,7 @@
 
 ## Сейчас
 
-Этап 3 в ветке `feature/stage-3-database`: код готов, осталось ревью и PR. Этапы 0–2 влиты в `main`.
+Этап 4 в ветке `feature/stage-4-rates-client`: код готов, осталось ревью и PR. Этапы 0–3 влиты в `main`.
 
 ## Сделано
 
@@ -21,7 +21,11 @@
 - PostgreSQL 18 в Docker (`compose.yaml`), миграции Flyway: `V1` таблица `exchange_rates`,
   `V2` таблица `alert_rules`. Репозитории на `JdbcClient` в пакете `persistence`:
   `ExchangeRateRepository` (`save`, `findLatest`) и `AlertRuleRepository` (`save`, `findAll`).
-  Тесты репозиториев идут на временной базе через Testcontainers. Всего 26 тестов.
+  Тесты репозиториев идут на временной базе через Testcontainers.
+- Клиент `OpenExchangeRatesClient` в пакете `rates` на `RestClient`: метод `fetchLatest`
+  запрашивает `/latest.json` и возвращает список `ExchangeRate` с базой USD. Адрес, ключ
+  (`OXR_APP_ID`) и таймауты (5 с соединение, 10 с ответ) в `application.properties`.
+  Тесты на поддельном сервере `MockRestServiceServer`, без запросов в интернет. Всего 28 тестов.
 
 ## Принятые решения
 
@@ -46,6 +50,6 @@
 
 ## Дальше
 
-1. Этап 3: ревью кода, PR, слияние в `main`.
-2. Этап 4: клиент внешнего API, ветка `feature/stage-4-rates-client`.
-   Перед этим заменить ключ Open Exchange Rates, если ещё не заменён: он попадал в чат.
+1. Этап 4: ревью кода, PR, слияние в `main`.
+2. Этап 5: сбор курсов по расписанию, ветка `feature/stage-5-scheduler`. Там же первый
+   настоящий запрос с ключом. Ключ уже заменён, вводить его только в терминал.
