@@ -12,5 +12,6 @@ public record ExchangeRate(CurrencyPair pair, BigDecimal rate, Instant timestamp
         if (rate.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Rate must be positive: " + rate);
         }
+        rate = rate.stripTrailingZeros();
     }
 }
