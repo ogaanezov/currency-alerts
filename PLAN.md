@@ -97,9 +97,9 @@ pull request. Номеров задач у нас нет, поэтому в им
 
 Ветка: `feature/stage-2-domain-model`
 
-- [ ] Описать `Currency`, `CurrencyPair`, `ExchangeRate`, `AlertRule`, `Notification`.
-- [ ] Задать в `AlertRule` направление: выше или ниже порога.
-- [ ] Покрыть модель unit-тестами.
+- [x] Описать `Currency`, `CurrencyPair`, `ExchangeRate`, `AlertRule`, `Notification`.
+- [x] Задать в `AlertRule` направление: выше или ниже порога.
+- [x] Покрыть модель unit-тестами.
 
 Готово, когда: классы описаны, тесты проходят, база ещё не используется.
 
