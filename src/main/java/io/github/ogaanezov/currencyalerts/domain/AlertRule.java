@@ -11,6 +11,7 @@ public record AlertRule(CurrencyPair pair, Direction direction, BigDecimal thres
         if (threshold.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Threshold must be positive: " + threshold);
         }
+        threshold = threshold.stripTrailingZeros();
     }
 
     public boolean isTriggeredBy(BigDecimal rate) {
