@@ -1,5 +1,6 @@
 package io.github.ogaanezov.currencyalerts.persistence;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -19,16 +20,18 @@ public class ExchangeRateRepository {
         this.jdbcClient = jdbcClient;
     }
 
-    public void save(ExchangeRate exchangeRate) {
-        jdbcClient.sql("""
+    public boolean save(ExchangeRate exchangeRate) {
+        int insertedRows = jdbcClient.sql("""
                 INSERT INTO exchange_rates (base_currency, quote_currency, rate, rate_time)
                 VALUES (:base, :quote, :rate, :rateTime)
+                ON CONFLICT (base_currency, quote_currency, rate_time) DO NOTHING
                 """)
                 .param("base", exchangeRate.pair().base().code())
                 .param("quote", exchangeRate.pair().quote().code())
                 .param("rate", exchangeRate.rate())
                 .param("rateTime", exchangeRate.timestamp().atOffset(ZoneOffset.UTC))
                 .update();
+        return insertedRows == 1;
     }
 
     public Optional<ExchangeRate> findLatest(CurrencyPair pair) {
@@ -45,6 +48,17 @@ public class ExchangeRateRepository {
                         pair,
                         row.getBigDecimal("rate"),
                         row.getObject("rate_time", OffsetDateTime.class).toInstant()))
+                .optional();
+    }
+
+    public Optional<Instant> findLatestRateTime() {
+        return jdbcClient.sql("""
+                SELECT rate_time
+                FROM exchange_rates
+                ORDER BY rate_time DESC
+                LIMIT 1
+                """)
+                .query((row, rowNumber) -> row.getObject("rate_time", OffsetDateTime.class).toInstant())
                 .optional();
     }
 }
