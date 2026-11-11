@@ -22,15 +22,24 @@ class AlertRuleRepositoryTests {
     @Autowired
     private AlertRuleRepository repository;
 
+    private final AlertRule rule = new AlertRule(
+            new CurrencyPair(new Currency("USD"), new Currency("EUR")),
+            Direction.ABOVE,
+            new BigDecimal("0.95"));
+
     @Test
-    void savesAndFindsRule() {
-        AlertRule rule = new AlertRule(
-                new CurrencyPair(new Currency("USD"), new Currency("EUR")),
-                Direction.ABOVE,
-                new BigDecimal("0.95"));
+    void savesNewRuleAsNotTriggered() {
+        long id = repository.save(rule);
 
-        repository.save(rule);
+        assertTrue(repository.findAll().contains(new StoredAlertRule(id, rule, false)));
+    }
 
-        assertTrue(repository.findAll().contains(rule));
+    @Test
+    void updatesTriggeredState() {
+        long id = repository.save(rule);
+
+        repository.updateTriggered(id, true);
+
+        assertTrue(repository.findAll().contains(new StoredAlertRule(id, rule, true)));
     }
 }

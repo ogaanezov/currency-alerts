@@ -8,24 +8,34 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import io.github.ogaanezov.currencyalerts.alerts.AlertCheckService;
+
 @Component
 @ConditionalOnProperty(name = "rates.collection.enabled", havingValue = "true")
 public class RateCollectionScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(RateCollectionScheduler.class);
 
-    private final RateCollectionService service;
+    private final RateCollectionService collectionService;
+    private final AlertCheckService alertCheckService;
 
-    public RateCollectionScheduler(RateCollectionService service) {
-        this.service = service;
+    public RateCollectionScheduler(RateCollectionService collectionService, AlertCheckService alertCheckService) {
+        this.collectionService = collectionService;
+        this.alertCheckService = alertCheckService;
     }
 
     @Scheduled(fixedRateString = "${rates.collection.interval}")
     public void collectRates() {
+        Instant now = Instant.now();
         try {
-            service.collect(Instant.now());
+            collectionService.collect(now);
         } catch (RuntimeException e) {
             log.warn("Rate collection failed, will retry on next run: {}", e.getMessage());
+        }
+        try {
+            alertCheckService.checkRules(now);
+        } catch (RuntimeException e) {
+            log.warn("Alert check failed, will retry on next run: {}", e.getMessage());
         }
     }
 }
