@@ -19,30 +19,42 @@ public class AlertRuleRepository {
         this.jdbcClient = jdbcClient;
     }
 
-    public void save(AlertRule rule) {
-        jdbcClient.sql("""
+    public long save(AlertRule rule) {
+        return jdbcClient.sql("""
                 INSERT INTO alert_rules (base_currency, quote_currency, direction, threshold)
                 VALUES (:base, :quote, :direction, :threshold)
+                RETURNING id
                 """)
                 .param("base", rule.pair().base().code())
                 .param("quote", rule.pair().quote().code())
                 .param("direction", rule.direction().name())
                 .param("threshold", rule.threshold())
-                .update();
+                .query(Long.class)
+                .single();
     }
 
-    public List<AlertRule> findAll() {
+    public List<StoredAlertRule> findAll() {
         return jdbcClient.sql("""
-                SELECT base_currency, quote_currency, direction, threshold
+                SELECT id, base_currency, quote_currency, direction, threshold, triggered
                 FROM alert_rules
                 ORDER BY id
                 """)
-                .query((row, rowNumber) -> new AlertRule(
-                        new CurrencyPair(
-                                new Currency(row.getString("base_currency")),
-                                new Currency(row.getString("quote_currency"))),
-                        Direction.valueOf(row.getString("direction")),
-                        row.getBigDecimal("threshold")))
+                .query((row, rowNumber) -> new StoredAlertRule(
+                        row.getLong("id"),
+                        new AlertRule(
+                                new CurrencyPair(
+                                        new Currency(row.getString("base_currency")),
+                                        new Currency(row.getString("quote_currency"))),
+                                Direction.valueOf(row.getString("direction")),
+                                row.getBigDecimal("threshold")),
+                        row.getBoolean("triggered")))
                 .list();
+    }
+
+    public void updateTriggered(long id, boolean triggered) {
+        jdbcClient.sql("UPDATE alert_rules SET triggered = :triggered WHERE id = :id")
+                .param("triggered", triggered)
+                .param("id", id)
+                .update();
     }
 }
