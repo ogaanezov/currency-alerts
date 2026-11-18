@@ -53,6 +53,15 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export interface ConversionResult {
+  from: string;
+  to: string;
+  amount: number;
+  rate: number;
+  result: number;
+  rateTime: string;
+}
+
 export const api = {
   rules: () => request<Rule[]>('/api/rules'),
   createRule: (rule: NewRule) =>
@@ -65,4 +74,6 @@ export const api = {
   rates: (base: string, quote: string, limit = 48) =>
     request<Rate[]>(`/api/rates/${base}/${quote}?limit=${limit}`),
   notifications: () => request<AppNotification[]>('/api/notifications'),
+  convert: (from: string, to: string, amount: number) =>
+    request<ConversionResult>(`/api/convert?from=${from}&to=${to}&amount=${amount}`),
 };
