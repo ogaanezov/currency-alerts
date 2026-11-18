@@ -4,24 +4,66 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Currency Alerts</title>
+    <meta name="description" content="Курсы валют, конвертер и оповещения о пересечении порога." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Тему ставим до отрисовки страницы, иначе при загрузке мелькнёт другая.
+      try {
+        const theme = localStorage.getItem('currency-alerts-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
   </head>
   <body>
-    <header class="top">
-      <div class="brand">
-        <div class="logo" aria-hidden="true">¤</div>
-        <div>
-          <h1>Currency Alerts</h1>
-          <p class="subtitle">Курсы валют и оповещения о порогах</p>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#top" aria-label="Currency Alerts, наверх">
+          <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+            <defs>
+              <linearGradient id="logo-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#3a9a63" />
+                <stop offset="1" stop-color="#155e3a" />
+              </linearGradient>
+            </defs>
+            <rect width="48" height="48" rx="14" fill="url(#logo-gradient)" />
+            <circle cx="22" cy="27" r="13" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.2" />
+            <path d="M11 32l7-7 5 4 10-11" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M27.5 18H33v5.5" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+            <circle class="logo-dot" cx="37.5" cy="10.5" r="5.5" fill="#fbbf24" stroke="#fff" stroke-width="2" />
+          </svg>
+          <span class="brand-text">
+            <span class="brand-name">Currency Alerts</span>
+            <span class="brand-tag">курсы · конвертер · оповещения</span>
+          </span>
+        </a>
+        <nav class="nav" aria-label="Разделы">
+          <a href="#converter">Конвертер</a>
+          <a href="#chart">График</a>
+          <a href="#banknotes">Купюры</a>
+          <a href="#rules-section">Правила</a>
+        </nav>
+        <div class="top-actions">
+          <div id="status" class="status"><span class="dot"></span><span id="status-text">Загрузка…</span></div>
+          <button id="theme-toggle" type="button" class="theme-toggle">
+            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" /></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" /></svg>
+          </button>
         </div>
       </div>
-      <div id="status" class="status"><span class="dot"></span><span id="status-text">Загрузка…</span></div>
     </header>
 
-    <main>
-      <section id="tiles" class="tiles" aria-label="Текущие курсы"></section>
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-text">
+          <p class="eyebrow">USD · EUR · GBP · AMD · GEL · RUB</p>
+          <h1 id="hero-title">Курсы валют <span class="accent-text">под рукой</span></h1>
+          <p class="hero-sub">Курсы обновляются каждый час. Переводите суммы между валютами и получайте уведомление, когда курс пересечёт ваш порог.</p>
+        </div>
+        <div id="tiles" class="tiles" aria-label="Текущие курсы"></div>
+      </section>
 
-      <section class="card converter" aria-labelledby="converter-title">
-        <h2 id="converter-title">Конвертер</h2>
+      <section id="converter" class="card converter" aria-labelledby="converter-title">
+        <div class="section-title"><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5" /></svg></span><h2 id="converter-title">Конвертер</h2></div>
         <form id="converter-form" class="converter-form">
           <label class="amount-field">Сумма
             <input id="conv-amount" type="number" min="0" step="any" value="100" inputmode="decimal" />
@@ -34,12 +76,15 @@
           <div id="conv-value" class="conv-value">—</div>
           <div id="conv-meta" class="muted small"></div>
         </div>
+        <div id="conv-quick" class="chips" aria-label="Быстрый выбор суммы"></div>
+        <h3 class="subhead">В других валютах</h3>
+        <ul id="conv-others" class="others"></ul>
       </section>
 
-      <section class="card chart-card">
+      <section id="chart" class="card chart-card">
         <div class="card-head">
           <div>
-            <h2 id="chart-title">Курс</h2>
+            <div class="section-title"><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16" /><path d="M5 15l4.5-4.5 3.5 3.5L19 8" /></svg></span><h2 id="chart-title">Курс</h2></div>
             <p id="chart-sub" class="muted small"></p>
           </div>
           <div class="periods">
@@ -55,10 +100,10 @@
         <p id="chart-empty" class="empty" hidden>Курсов пока нет. Они собираются раз в час.</p>
       </section>
 
-      <section class="card" aria-labelledby="banknotes-title">
+      <section id="banknotes" class="card" aria-labelledby="banknotes-title">
         <div class="card-head">
           <div>
-            <h2 id="banknotes-title">Купюры</h2>
+            <div class="section-title"><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.6" /><path d="M6 9.5v5M18 9.5v5" /></svg></span><h2 id="banknotes-title">Купюры</h2></div>
             <p class="muted small">Какие купюры есть в обращении и сколько они стоят по последнему курсу.</p>
           </div>
           <div id="banknote-tabs" class="segmented" role="tablist" aria-label="Валюта"></div>
@@ -68,9 +113,9 @@
         <p id="banknote-hint" class="muted small hint"></p>
       </section>
 
-      <div class="columns">
+      <div id="rules-section" class="columns">
         <section class="card">
-          <h2>Правила</h2>
+          <div class="section-title"><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></svg></span><h2>Правила</h2></div>
           <p class="muted small">Уведомление придёт, когда курс пересечёт порог.</p>
           <form id="rule-form" class="rule-form">
             <div class="field-row">
@@ -95,13 +140,20 @@
         </section>
 
         <section class="card">
-          <h2>Уведомления</h2>
+          <div class="section-title"><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg></span><h2>Уведомления</h2></div>
           <p class="muted small">Сначала новые.</p>
           <ul id="notifications" class="list timeline"></ul>
           <p id="notifications-empty" class="empty" hidden>Уведомлений пока нет.</p>
         </section>
       </div>
     </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>Currency Alerts — учебный проект на Java и Spring Boot</span>
+        <span>Курсы: <a href="https://openexchangerates.org" target="_blank" rel="noopener noreferrer">Open Exchange Rates</a> · <a href="/swagger-ui.html">REST API</a></span>
+      </div>
+    </footer>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
