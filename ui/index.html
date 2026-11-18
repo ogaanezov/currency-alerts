@@ -117,6 +117,15 @@
         <section class="card">
           <div class="section-title"><span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></svg></span><h2>Правила</h2></div>
           <p class="muted small">Уведомление придёт, когда курс пересечёт порог.</p>
+          <div id="owner-bar" class="owner-bar" hidden>
+            <span id="owner-text" class="muted small"></span>
+            <button id="owner-button" type="button" class="link-button"></button>
+          </div>
+          <form id="owner-form" class="owner-form" hidden>
+            <label>Ключ владельца <input id="owner-input" type="password" autocomplete="current-password" required /></label>
+            <button type="submit" class="primary">Войти</button>
+            <button id="owner-cancel" type="button" class="link-button">Отмена</button>
+          </form>
           <form id="rule-form" class="rule-form">
             <div class="field-row">
               <label>База <input name="base" value="USD" maxlength="3" required /></label>
