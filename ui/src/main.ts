@@ -9,6 +9,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import { api, type AppNotification, type Direction, type Rate, type Rule } from './api';
+import { BANKNOTES, type Banknote, type BanknoteSeries } from './banknotes';
 import './style.css';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Filler);
@@ -314,6 +315,73 @@ convSwap.addEventListener('click', () => {
 });
 byId<HTMLFormElement>('converter-form').addEventListener('submit', (event) => event.preventDefault());
 
+// ---------- Купюры ----------
+
+const banknoteTabs = byId<HTMLDivElement>('banknote-tabs');
+const banknoteAbout = byId<HTMLParagraphElement>('banknote-about');
+const banknoteGrid = byId<HTMLDivElement>('banknote-grid');
+const banknoteHint = byId<HTMLParagraphElement>('banknote-hint');
+
+let selectedSeries = BANKNOTES[0];
+const valueFormat = new Intl.NumberFormat('ru-RU');
+
+function renderBanknote(series: BanknoteSeries, banknote: Banknote, rate: number | null, target: string): HTMLElement {
+  const card = el('figure', 'banknote');
+  const bill = el('div', 'bill');
+  bill.style.setProperty('--note', banknote.color);
+  bill.setAttribute('role', 'img');
+  bill.setAttribute('aria-label', `${valueFormat.format(banknote.value)} ${series.code}`);
+
+  bill.append(
+    el('span', 'bill-corner top', valueFormat.format(banknote.value)),
+    el('span', 'bill-seal', info(series.code).symbol),
+    el('span', 'bill-name', series.title),
+    el('span', 'bill-corner bottom', valueFormat.format(banknote.value)),
+  );
+
+  const caption = el('figcaption');
+  caption.append(el('div', 'bill-value', `${valueFormat.format(banknote.value)} ${info(series.code).symbol}`));
+  if (rate !== null) {
+    caption.append(el('div', 'muted small', `≈ ${moneyFormat.format(banknote.value * rate)} ${info(target).symbol}`));
+  }
+  if (banknote.note) caption.append(el('div', 'muted small', banknote.note));
+
+  card.append(bill, caption);
+  return card;
+}
+
+async function renderBanknotes(): Promise<void> {
+  const series = selectedSeries;
+  banknoteTabs.querySelectorAll('button').forEach((b) =>
+    b.setAttribute('aria-selected', String(b.dataset.code === series.code)),
+  );
+  banknoteAbout.textContent = series.about;
+  banknoteHint.textContent = series.approximateColors ? 'Цвета карточек приблизительные.' : '';
+
+  // Цену купюры показываем в долларах, а для самого доллара — в евро.
+  const target = series.code === BASE ? QUOTES[0] : BASE;
+  let rate: number | null = null;
+  try {
+    rate = Number((await api.convert(series.code, target, 1)).rate);
+  } catch {
+    // курса ещё нет — показываем купюры без цены
+  }
+  if (series !== selectedSeries) return;
+  banknoteGrid.replaceChildren(...series.notes.map((note) => renderBanknote(series, note, rate, target)));
+}
+
+for (const series of BANKNOTES) {
+  const tab = el('button', '', series.code);
+  tab.type = 'button';
+  tab.dataset.code = series.code;
+  tab.setAttribute('role', 'tab');
+  tab.addEventListener('click', () => {
+    selectedSeries = series;
+    renderBanknotes();
+  });
+  banknoteTabs.append(tab);
+}
+
 // ---------- Обновление ----------
 
 function showStatus(text: string, isError = false): void {
@@ -327,7 +395,7 @@ function showError(e: unknown): void {
 
 async function refresh(): Promise<void> {
   try {
-    await Promise.all([loadTiles(), loadChart(), loadRules(), loadNotifications(), convert()]);
+    await Promise.all([loadTiles(), loadChart(), loadRules(), loadNotifications(), convert(), renderBanknotes()]);
     showStatus(`Обновлено в ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`);
   } catch (e) {
     showStatus(`Нет связи с сервером: ${(e as Error).message}`, true);
