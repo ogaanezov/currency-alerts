@@ -1,0 +1,19 @@
+# Настройки для Render: сайт собирается из Dockerfile этого репозитория.
+# Секреты (адрес базы, пароль, ключи) здесь не хранятся: Render спросит их при создании.
+services:
+  - type: web
+    name: currency-alerts
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: OXR_APP_ID
+        sync: false
+      - key: ADMIN_TOKEN
+        sync: false
