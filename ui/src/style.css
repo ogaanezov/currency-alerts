@@ -209,7 +209,8 @@ main {
   border-radius: 7px;
   cursor: pointer;
 }
-.segmented button.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); font-weight: 600; }
+.segmented button.active,
+.segmented button[aria-selected='true'] { background: var(--card); color: var(--text); box-shadow: var(--shadow); font-weight: 600; }
 
 /* ---------- Форма ---------- */
 
@@ -319,3 +320,65 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .swap:hover { background: var(--accent-faint); }
 .conv-result { margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--accent-faint); }
 .conv-value { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* ---------- Купюры ---------- */
+
+.hint { margin-top: 12px; }
+
+.banknote-grid {
+  display: grid;
+  gap: 18px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  margin-top: 16px;
+}
+
+.banknote { margin: 0; display: grid; gap: 8px; }
+
+.bill {
+  --note: #888;
+  position: relative;
+  aspect-ratio: 2.1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 72% 45%, rgba(255, 255, 255, 0.28) 0 20%, transparent 21%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 9px),
+    linear-gradient(135deg, color-mix(in srgb, var(--note) 75%, white), var(--note) 55%, color-mix(in srgb, var(--note) 70%, black));
+  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.18), 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+.bill:hover { transform: translateY(-2px) rotate(-1deg); }
+
+.bill-corner {
+  position: absolute;
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-variant-numeric: tabular-nums;
+}
+.bill-corner.top { top: 12px; left: 14px; }
+.bill-corner.bottom { bottom: 12px; right: 14px; font-size: 15px; opacity: 0.85; }
+
+.bill-seal {
+  position: absolute;
+  top: 45%;
+  left: 72%;
+  transform: translate(-50%, -50%);
+  font-size: 26px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.bill-name {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.bill-value { font-weight: 600; }
