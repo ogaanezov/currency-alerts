@@ -27,4 +27,5 @@ RUN useradd --system --no-create-home app
 COPY --from=backend /app/target/currency-alerts-*.jar app.jar
 USER app
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Java берёт не больше 75% памяти контейнера: на бесплатном хостинге её всего 512 МБ.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]

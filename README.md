@@ -160,3 +160,4 @@ curl -X POST http://localhost:8080/api/rules \
 - [План и этапы](PLAN.md)
 - [Текущее состояние работы](docs/progress.md)
 - [Внешний API курсов](docs/external-api.md)
+- [Выкладка в интернет (Render + Neon)](docs/deploy.md)
