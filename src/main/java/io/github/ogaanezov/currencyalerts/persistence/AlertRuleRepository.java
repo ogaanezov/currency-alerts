@@ -57,4 +57,10 @@ public class AlertRuleRepository {
                 .param("id", id)
                 .update();
     }
+
+    public boolean delete(long id) {
+        return jdbcClient.sql("DELETE FROM alert_rules WHERE id = :id")
+                .param("id", id)
+                .update() == 1;
+    }
 }

@@ -54,4 +54,27 @@ public class NotificationRepository {
                         row.getObject("created_at", OffsetDateTime.class).toInstant()))
                 .list();
     }
+
+    public List<StoredNotification> findAll() {
+        return jdbcClient.sql("""
+                SELECT n.id, n.rule_id, r.base_currency, r.quote_currency, r.direction, r.threshold,
+                       n.rate, n.created_at
+                FROM notifications n
+                JOIN alert_rules r ON r.id = n.rule_id
+                ORDER BY n.created_at DESC
+                """)
+                .query((row, rowNumber) -> new StoredNotification(
+                        row.getLong("id"),
+                        row.getLong("rule_id"),
+                        new Notification(
+                                new AlertRule(
+                                        new CurrencyPair(
+                                                new Currency(row.getString("base_currency")),
+                                                new Currency(row.getString("quote_currency"))),
+                                        Direction.valueOf(row.getString("direction")),
+                                        row.getBigDecimal("threshold")),
+                                row.getBigDecimal("rate").stripTrailingZeros(),
+                                row.getObject("created_at", OffsetDateTime.class).toInstant())))
+                .list();
+    }
 }

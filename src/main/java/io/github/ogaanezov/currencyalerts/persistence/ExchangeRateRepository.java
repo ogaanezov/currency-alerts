@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -60,5 +61,23 @@ public class ExchangeRateRepository {
                 """)
                 .query((row, rowNumber) -> row.getObject("rate_time", OffsetDateTime.class).toInstant())
                 .optional();
+    }
+
+    public List<ExchangeRate> findHistory(CurrencyPair pair, int limit) {
+        return jdbcClient.sql("""
+                SELECT rate, rate_time
+                FROM exchange_rates
+                WHERE base_currency = :base AND quote_currency = :quote
+                ORDER BY rate_time DESC
+                LIMIT :limit
+                """)
+                .param("base", pair.base().code())
+                .param("quote", pair.quote().code())
+                .param("limit", limit)
+                .query((row, rowNumber) -> new ExchangeRate(
+                        pair,
+                        row.getBigDecimal("rate"),
+                        row.getObject("rate_time", OffsetDateTime.class).toInstant()))
+                .list();
     }
 }
