@@ -532,3 +532,29 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
   .theme-toggle svg, .bill, .tile { transition: none; }
   .logo-dot { animation: none; }
 }
+
+/* ---------- Доступ владельца ---------- */
+
+.owner-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-faint);
+}
+.owner-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 14px; }
+.owner-form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); flex: 1; min-width: 180px; }
+.link-button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  background: none;
+  color: var(--accent-strong);
+  cursor: pointer;
+  padding: 4px;
+}
+.link-button:hover { text-decoration: underline; }

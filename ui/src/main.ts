@@ -8,7 +8,7 @@ import {
   PointElement,
   Tooltip,
 } from 'chart.js';
-import { api, type AppNotification, type Direction, type Rate, type Rule } from './api';
+import { api, ownerToken, type AppNotification, type Direction, type Rate, type Rule } from './api';
 import { drawBanknote } from './banknoteArt';
 import { BANKNOTES, type Banknote, type BanknoteSeries } from './banknotes';
 import './style.css';
@@ -206,9 +206,61 @@ function renderRule(rule: Rule): HTMLLIElement {
     }
   });
 
-  item.append(main, badge, remove);
+  item.append(main, badge);
+  if (canEdit) item.append(remove);
   return item;
 }
+
+// ---------- Доступ владельца ----------
+
+let canEdit = false;
+const ownerBar = byId<HTMLDivElement>('owner-bar');
+const ownerText = byId<HTMLSpanElement>('owner-text');
+const ownerButton = byId<HTMLButtonElement>('owner-button');
+const ownerForm = byId<HTMLFormElement>('owner-form');
+const ownerInput = byId<HTMLInputElement>('owner-input');
+
+// Узнаём у сервера, можно ли менять правила, и показываем или прячем форму.
+async function loadAccess(): Promise<void> {
+  canEdit = (await api.access()).canEdit;
+  const hasToken = ownerToken.get() !== null;
+  ruleForm.hidden = !canEdit;
+  ownerForm.hidden = true;
+  // Защита выключена (локальная разработка) — панель владельца не нужна.
+  ownerBar.hidden = canEdit && !hasToken;
+  if (canEdit) {
+    ownerText.textContent = 'Вы вошли как владелец.';
+    ownerButton.textContent = 'Выйти';
+  } else {
+    ownerText.textContent = hasToken ? 'Ключ владельца не подошёл. Правила только для просмотра.' : 'Правила только для просмотра.';
+    ownerButton.textContent = 'Я владелец';
+  }
+}
+
+ownerButton.addEventListener('click', async () => {
+  if (canEdit) {
+    ownerToken.set(null);
+    await loadAccess();
+    await loadRules();
+    return;
+  }
+  ownerBar.hidden = true;
+  ownerForm.hidden = false;
+  ownerInput.focus();
+});
+
+byId<HTMLButtonElement>('owner-cancel').addEventListener('click', () => {
+  ownerForm.hidden = true;
+  ownerBar.hidden = false;
+});
+
+ownerForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  ownerToken.set(ownerInput.value.trim());
+  ownerInput.value = '';
+  await loadAccess();
+  await loadRules();
+});
 
 async function loadRules(): Promise<void> {
   const rules = await api.rules();
@@ -486,5 +538,9 @@ async function refresh(): Promise<void> {
   }
 }
 
-refresh();
-setInterval(refresh, REFRESH_MS);
+loadAccess()
+  .catch(() => undefined)
+  .finally(() => {
+    refresh();
+    setInterval(refresh, REFRESH_MS);
+  });
