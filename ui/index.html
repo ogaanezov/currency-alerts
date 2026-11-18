@@ -20,6 +20,22 @@
     <main>
       <section id="tiles" class="tiles" aria-label="Текущие курсы"></section>
 
+      <section class="card converter" aria-labelledby="converter-title">
+        <h2 id="converter-title">Конвертер</h2>
+        <form id="converter-form" class="converter-form">
+          <label class="amount-field">Сумма
+            <input id="conv-amount" type="number" min="0" step="any" value="100" inputmode="decimal" />
+          </label>
+          <label>Из <select id="conv-from"></select></label>
+          <button id="conv-swap" type="button" class="swap" title="Поменять местами" aria-label="Поменять валюты местами">⇄</button>
+          <label>В <select id="conv-to"></select></label>
+        </form>
+        <div class="conv-result">
+          <div id="conv-value" class="conv-value">—</div>
+          <div id="conv-meta" class="muted small"></div>
+        </div>
+      </section>
+
       <section class="card chart-card">
         <div class="card-head">
           <div>

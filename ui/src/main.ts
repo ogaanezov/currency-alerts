@@ -16,7 +16,7 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryS
 const REFRESH_MS = 60_000;
 const BASE = 'USD';
 // Валюты, курсы которых собирает бэкенд (rates.currencies).
-const QUOTES = ['EUR', 'GBP'];
+const QUOTES = ['EUR', 'GBP', 'AMD', 'GEL'];
 
 const CURRENCY_INFO: Record<string, { symbol: string; name: string }> = {
   USD: { symbol: '$', name: 'Доллар США' },
@@ -89,6 +89,7 @@ function renderTile(quote: string, rates: Rate[]): HTMLButtonElement {
   const [latest, previous] = rates;
   const value = el('div', 'tile-value', latest ? String(latest.rate) : '—');
   tile.append(head, name, value);
+  if (!latest) tile.append(el('div', 'muted small', 'Появится после сбора'));
 
   if (latest && previous) {
     const change = ((Number(latest.rate) - Number(previous.rate)) / Number(previous.rate)) * 100;
@@ -250,6 +251,69 @@ async function loadNotifications(): Promise<void> {
   notificationsEmpty.hidden = notifications.length > 0;
 }
 
+// ---------- Конвертер ----------
+
+const convAmount = byId<HTMLInputElement>('conv-amount');
+const convFrom = byId<HTMLSelectElement>('conv-from');
+const convTo = byId<HTMLSelectElement>('conv-to');
+const convSwap = byId<HTMLButtonElement>('conv-swap');
+const convValue = byId<HTMLDivElement>('conv-value');
+const convMeta = byId<HTMLDivElement>('conv-meta');
+
+const moneyFormat = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+for (const code of [BASE, ...QUOTES]) {
+  convFrom.append(new Option(`${code} · ${info(code).name}`, code));
+  convTo.append(new Option(`${code} · ${info(code).name}`, code));
+}
+convFrom.value = BASE;
+convTo.value = QUOTES[0];
+
+// Номер последнего запроса: ответ на устаревший запрос не должен перезаписать новый.
+let convRequest = 0;
+
+async function convert(): Promise<void> {
+  const amount = Number(convAmount.value);
+  const from = convFrom.value;
+  const to = convTo.value;
+  const request = ++convRequest;
+
+  if (from === to) {
+    convValue.textContent = `${moneyFormat.format(amount)} ${info(to).symbol}`;
+    convMeta.textContent = 'Одинаковые валюты';
+    return;
+  }
+  if (!(amount > 0)) {
+    convValue.textContent = '—';
+    convMeta.textContent = 'Введите сумму больше нуля';
+    return;
+  }
+  try {
+    const result = await api.convert(from, to, amount);
+    if (request !== convRequest) return;
+    convValue.textContent = `${moneyFormat.format(result.result)} ${info(to).symbol}`;
+    convMeta.textContent = `1 ${from} = ${result.rate} ${to} · курс от ${dateFormat.format(new Date(result.rateTime))}`;
+  } catch (e) {
+    if (request !== convRequest) return;
+    convValue.textContent = '—';
+    const message = (e as Error).message;
+    convMeta.textContent = message.startsWith('No rate') ? 'Курса этой валюты ещё нет, он появится после следующего сбора.' : message;
+  }
+}
+
+let convTimer: number | undefined;
+convAmount.addEventListener('input', () => {
+  clearTimeout(convTimer);
+  convTimer = window.setTimeout(convert, 250);
+});
+convFrom.addEventListener('change', convert);
+convTo.addEventListener('change', convert);
+convSwap.addEventListener('click', () => {
+  [convFrom.value, convTo.value] = [convTo.value, convFrom.value];
+  convert();
+});
+byId<HTMLFormElement>('converter-form').addEventListener('submit', (event) => event.preventDefault());
+
 // ---------- Обновление ----------
 
 function showStatus(text: string, isError = false): void {
@@ -263,7 +327,7 @@ function showError(e: unknown): void {
 
 async function refresh(): Promise<void> {
   try {
-    await Promise.all([loadTiles(), loadChart(), loadRules(), loadNotifications()]);
+    await Promise.all([loadTiles(), loadChart(), loadRules(), loadNotifications(), convert()]);
     showStatus(`Обновлено в ${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`);
   } catch (e) {
     showStatus(`Нет связи с сервером: ${(e as Error).message}`, true);

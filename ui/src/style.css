@@ -147,7 +147,7 @@ main {
 
 /* ---------- Плитки курсов ---------- */
 
-.tiles { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.tiles { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 
 .tile {
   display: grid;
@@ -179,7 +179,7 @@ main {
   color: var(--accent-strong);
   font-weight: 700;
 }
-.tile-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.tile-value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; font-variant-numeric: tabular-nums; }
 
 .change { font-size: 13px; font-weight: 500; }
 .change.up { color: var(--up); }
@@ -298,3 +298,24 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .event-icon.up { background: var(--up-soft); color: var(--up); }
 .event-icon.down { background: var(--down-soft); color: var(--down); }
 .event-title { font-weight: 500; }
+
+/* ---------- Конвертер ---------- */
+
+.converter-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 14px; }
+.converter-form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); flex: 1; min-width: 150px; }
+.converter-form .amount-field { flex: 0.8; min-width: 120px; }
+.swap {
+  font: inherit;
+  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+.swap:hover { background: var(--accent-faint); }
+.conv-result { margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--accent-faint); }
+.conv-value { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
