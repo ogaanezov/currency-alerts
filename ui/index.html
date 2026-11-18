@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Currency Alerts</title>
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">¤</div>
+        <div>
+          <h1>Currency Alerts</h1>
+          <p class="subtitle">Курсы валют и оповещения о порогах</p>
+        </div>
+      </div>
+      <div id="status" class="status"><span class="dot"></span><span id="status-text">Загрузка…</span></div>
+    </header>
+
+    <main>
+      <section id="tiles" class="tiles" aria-label="Текущие курсы"></section>
+
+      <section class="card chart-card">
+        <div class="card-head">
+          <div>
+            <h2 id="chart-title">Курс</h2>
+            <p id="chart-sub" class="muted small"></p>
+          </div>
+          <div class="periods">
+            <span class="muted small">Последние записи</span>
+            <div id="periods" class="segmented" role="group" aria-label="Сколько последних записей показать">
+              <button type="button" data-limit="24" class="active">24</button>
+              <button type="button" data-limit="72">72</button>
+              <button type="button" data-limit="168">168</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="rate-chart"></canvas></div>
+        <p id="chart-empty" class="empty" hidden>Курсов пока нет. Они собираются раз в час.</p>
+      </section>
+
+      <div class="columns">
+        <section class="card">
+          <h2>Правила</h2>
+          <p class="muted small">Уведомление придёт, когда курс пересечёт порог.</p>
+          <form id="rule-form" class="rule-form">
+            <div class="field-row">
+              <label>База <input name="base" value="USD" maxlength="3" required /></label>
+              <span class="arrow" aria-hidden="true">→</span>
+              <label>Валюта <input name="quote" value="EUR" maxlength="3" required /></label>
+            </div>
+            <div class="field-row">
+              <label>Условие
+                <select name="direction">
+                  <option value="ABOVE">станет выше</option>
+                  <option value="BELOW">станет ниже</option>
+                </select>
+              </label>
+              <label class="grow">Порог <input name="threshold" type="number" step="any" min="0" placeholder="0.95" required /></label>
+            </div>
+            <button type="submit" class="primary">Добавить правило</button>
+          </form>
+          <p id="form-error" class="error" hidden></p>
+          <ul id="rules" class="list"></ul>
+          <p id="rules-empty" class="empty" hidden>Правил пока нет.</p>
+        </section>
+
+        <section class="card">
+          <h2>Уведомления</h2>
+          <p class="muted small">Сначала новые.</p>
+          <ul id="notifications" class="list timeline"></ul>
+          <p id="notifications-empty" class="empty" hidden>Уведомлений пока нет.</p>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
