@@ -1,0 +1,8 @@
+.git
+.idea
+.vscode
+.claude
+.env
+target
+ui/node_modules
+ui/dist

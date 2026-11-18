@@ -10,6 +10,26 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U currency_alerts -d currency_alerts"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Внутри Docker база доступна по имени сервиса, а не по localhost.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/currency_alerts
+      # Ключ берётся из переменной окружения терминала, в файлах его нет.
+      OXR_APP_ID: ${OXR_APP_ID:-}
+    ports:
+      # По умолчанию приложение доступно только с этого компьютера.
+      # APP_HOST=0.0.0.0 открывает его для устройств в той же Wi-Fi сети (например, телефона).
+      - "${APP_HOST:-127.0.0.1}:8080:8080"
 
 volumes:
   postgres-data:

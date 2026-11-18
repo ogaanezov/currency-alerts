@@ -9,6 +9,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import { api, type AppNotification, type Direction, type Rate, type Rule } from './api';
+import { drawBanknote } from './banknoteArt';
 import { BANKNOTES, type Banknote, type BanknoteSeries } from './banknotes';
 import './style.css';
 
@@ -17,7 +18,7 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryS
 const REFRESH_MS = 60_000;
 const BASE = 'USD';
 // Валюты, курсы которых собирает бэкенд (rates.currencies).
-const QUOTES = ['EUR', 'GBP', 'AMD', 'GEL'];
+const QUOTES = ['EUR', 'GBP', 'AMD', 'GEL', 'RUB'];
 
 const CURRENCY_INFO: Record<string, { symbol: string; name: string }> = {
   USD: { symbol: '$', name: 'Доллар США' },
@@ -25,6 +26,7 @@ const CURRENCY_INFO: Record<string, { symbol: string; name: string }> = {
   GBP: { symbol: '£', name: 'Фунт стерлингов' },
   AMD: { symbol: '֏', name: 'Армянский драм' },
   GEL: { symbol: '₾', name: 'Грузинский лари' },
+  RUB: { symbol: '₽', name: 'Российский рубль' },
 };
 
 function info(code: string) {
@@ -96,7 +98,7 @@ function renderTile(quote: string, rates: Rate[]): HTMLButtonElement {
     const change = ((Number(latest.rate) - Number(previous.rate)) / Number(previous.rate)) * 100;
     const sign = change > 0 ? '▲' : change < 0 ? '▼' : '•';
     const kind = change > 0 ? 'up' : change < 0 ? 'down' : 'flat';
-    tile.append(el('div', `change ${kind}`, `${sign} ${Math.abs(change).toFixed(3)}% к прошлому`));
+    tile.append(el('div', `change ${kind}`, `${sign} ${Math.abs(change).toFixed(3)}%`));
   }
   return tile;
 }
@@ -122,7 +124,7 @@ async function loadChart(): Promise<void> {
   const rates = (await api.rates(BASE, selectedQuote, selectedLimit)).reverse();
 
   chartTitle.textContent = `${BASE}/${selectedQuote}`;
-  chartSub.textContent = `Сколько ${info(selectedQuote).name.toLowerCase()} дают за 1 ${BASE}`;
+  chartSub.textContent = `${info(selectedQuote).name}: сколько ${selectedQuote} дают за 1 ${BASE}`;
   chartEmpty.hidden = rates.length > 0;
   chartCanvas.parentElement!.hidden = rates.length === 0;
 
@@ -260,8 +262,11 @@ const convTo = byId<HTMLSelectElement>('conv-to');
 const convSwap = byId<HTMLButtonElement>('conv-swap');
 const convValue = byId<HTMLDivElement>('conv-value');
 const convMeta = byId<HTMLDivElement>('conv-meta');
+const convOthers = byId<HTMLUListElement>('conv-others');
+const convQuick = byId<HTMLDivElement>('conv-quick');
 
 const moneyFormat = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const valueFormat = new Intl.NumberFormat('ru-RU');
 
 for (const code of [BASE, ...QUOTES]) {
   convFrom.append(new Option(`${code} · ${info(code).name}`, code));
@@ -273,20 +278,41 @@ convTo.value = QUOTES[0];
 // Номер последнего запроса: ответ на устаревший запрос не должен перезаписать новый.
 let convRequest = 0;
 
+// Та же сумма во всех остальных валютах.
+async function convertOthers(from: string, amount: number, request: number): Promise<void> {
+  const targets = [BASE, ...QUOTES].filter((code) => code !== from && code !== convTo.value);
+  const results = await Promise.allSettled(targets.map((code) => api.convert(from, code, amount)));
+  if (request !== convRequest) return;
+  convOthers.replaceChildren(
+    ...targets.map((code, i) => {
+      const item = el('li');
+      const result = results[i];
+      item.append(el('span', 'muted', `${code} · ${info(code).name}`));
+      item.append(
+        el('span', 'other-value', result.status === 'fulfilled' ? `${moneyFormat.format(result.value.result)} ${info(code).symbol}` : 'нет курса'),
+      );
+      return item;
+    }),
+  );
+}
+
 async function convert(): Promise<void> {
   const amount = Number(convAmount.value);
   const from = convFrom.value;
   const to = convTo.value;
   const request = ++convRequest;
+  convQuick.querySelectorAll('button').forEach((b) => b.classList.toggle('active', Number(b.dataset.amount) === amount));
 
-  if (from === to) {
-    convValue.textContent = `${moneyFormat.format(amount)} ${info(to).symbol}`;
-    convMeta.textContent = 'Одинаковые валюты';
-    return;
-  }
   if (!(amount > 0)) {
     convValue.textContent = '—';
     convMeta.textContent = 'Введите сумму больше нуля';
+    convOthers.replaceChildren();
+    return;
+  }
+  convertOthers(from, amount, request);
+  if (from === to) {
+    convValue.textContent = `${moneyFormat.format(amount)} ${info(to).symbol}`;
+    convMeta.textContent = 'Одинаковые валюты';
     return;
   }
   try {
@@ -314,6 +340,16 @@ convSwap.addEventListener('click', () => {
   convert();
 });
 byId<HTMLFormElement>('converter-form').addEventListener('submit', (event) => event.preventDefault());
+for (const amount of [1, 10, 100, 1000, 10000]) {
+  const chip = el('button', 'chip', valueFormat.format(amount));
+  chip.type = 'button';
+  chip.dataset.amount = String(amount);
+  chip.addEventListener('click', () => {
+    convAmount.value = String(amount);
+    convert();
+  });
+  convQuick.append(chip);
+}
 
 // ---------- Купюры ----------
 
@@ -323,21 +359,10 @@ const banknoteGrid = byId<HTMLDivElement>('banknote-grid');
 const banknoteHint = byId<HTMLParagraphElement>('banknote-hint');
 
 let selectedSeries = BANKNOTES[0];
-const valueFormat = new Intl.NumberFormat('ru-RU');
 
 function renderBanknote(series: BanknoteSeries, banknote: Banknote, rate: number | null, target: string): HTMLElement {
   const card = el('figure', 'banknote');
-  const bill = el('div', 'bill');
-  bill.style.setProperty('--note', banknote.color);
-  bill.setAttribute('role', 'img');
-  bill.setAttribute('aria-label', `${valueFormat.format(banknote.value)} ${series.code}`);
-
-  bill.append(
-    el('span', 'bill-corner top', valueFormat.format(banknote.value)),
-    el('span', 'bill-seal', info(series.code).symbol),
-    el('span', 'bill-name', series.title),
-    el('span', 'bill-corner bottom', valueFormat.format(banknote.value)),
-  );
+  const label = `${valueFormat.format(banknote.value)} ${series.code}`;
 
   const caption = el('figcaption');
   caption.append(el('div', 'bill-value', `${valueFormat.format(banknote.value)} ${info(series.code).symbol}`));
@@ -345,8 +370,9 @@ function renderBanknote(series: BanknoteSeries, banknote: Banknote, rate: number
     caption.append(el('div', 'muted small', `≈ ${moneyFormat.format(banknote.value * rate)} ${info(target).symbol}`));
   }
   if (banknote.note) caption.append(el('div', 'muted small', banknote.note));
+  if (banknote.extra) caption.append(el('div', 'muted small', banknote.extra));
 
-  card.append(bill, caption);
+  card.append(drawBanknote(series.code, banknote, label), caption);
   return card;
 }
 
@@ -381,6 +407,64 @@ for (const series of BANKNOTES) {
   });
   banknoteTabs.append(tab);
 }
+
+// ---------- Тема ----------
+
+type Theme = 'light' | 'dark';
+const THEME_KEY = 'currency-alerts-theme';
+const themeButton = byId<HTMLButtonElement>('theme-toggle');
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function currentTheme(): Theme {
+  const chosen = document.documentElement.dataset.theme;
+  if (chosen === 'light' || chosen === 'dark') return chosen;
+  return systemDark.matches ? 'dark' : 'light';
+}
+
+// Цвета графика берутся из CSS, поэтому после смены темы их нужно перечитать.
+function recolorChart(): void {
+  if (!chart) return;
+  const dataset = chart.data.datasets[0];
+  dataset.borderColor = cssVar('--accent');
+  dataset.pointBackgroundColor = cssVar('--accent');
+  const scales = chart.options.scales!;
+  scales.x!.ticks!.color = cssVar('--muted');
+  scales.y!.ticks!.color = cssVar('--muted');
+  scales.y!.grid!.color = cssVar('--grid');
+  chart.update('none');
+}
+
+function updateThemeButton(): void {
+  const dark = currentTheme() === 'dark';
+  themeButton.setAttribute('aria-pressed', String(dark));
+  themeButton.title = dark ? 'Включить светлую тему' : 'Включить тёмную тему';
+  themeButton.setAttribute('aria-label', themeButton.title);
+}
+
+function setTheme(theme: Theme): void {
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // хранилище недоступно (приватный режим) — тема просто не запомнится
+  }
+  recolorChart();
+  updateThemeButton();
+}
+
+themeButton.addEventListener('click', () => {
+  const root = document.documentElement;
+  // На время смены темы цвета плавно перетекают, потом переходы снова выключаются.
+  root.classList.add('theme-fade');
+  setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+  window.setTimeout(() => root.classList.remove('theme-fade'), 400);
+});
+
+systemDark.addEventListener('change', () => {
+  recolorChart();
+  updateThemeButton();
+});
+updateThemeButton();
 
 // ---------- Обновление ----------
 

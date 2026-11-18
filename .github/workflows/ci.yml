@@ -44,3 +44,12 @@ jobs:
 
       - name: Type check and build
         run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7
+
+      - name: Build Docker image
+        run: docker build --tag currency-alerts .
